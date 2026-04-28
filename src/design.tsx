@@ -19,6 +19,7 @@ type HeatmapMonth = "January" | "February" | "March" | "April" | "May" | "June" 
 type HeatmapSelection = "Jan-Mar" | "Apr-Jun" | "Jul-Sep" | "Oct-Dec";
 type Colors = ReturnType<typeof makeColors>;
 type Styles = Record<string, CSSProperties>;
+type AppElement = React.ReactElement;
 
 const accents: Record<Accent, string> = {
   blue: "#2F80FF",
@@ -122,7 +123,7 @@ function runTests(): void {
 }
 runTests();
 
-export default function LoopiApp(): JSX.Element {
+export default function LoopiApp(): AppElement {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [tab, setTab] = useState<Tab>("home");
@@ -319,11 +320,24 @@ export default function LoopiApp(): JSX.Element {
   );
 }
 
-function FriendsPage({ css, colors, onInvite }: { css: Styles; colors: Colors; onInvite: () => void }): JSX.Element {
+function FriendsPage({ css, colors, onInvite }: { css: Styles; colors: Colors; onInvite: () => void }): AppElement {
   return <main style={css.page}><Header label="Social" title="Friends" right={<button style={css.circle} onClick={onInvite}>+</button>} css={css} /><section style={css.summary}><Summary emoji="👤" num="4" text="active today" css={css} /><Summary emoji="🔥" num="31" text="best streak" css={css} /><Summary emoji="💚" num="5" text="friends" css={css} /></section>{friends.map((f) => <FriendCard key={f.name} friend={f} css={css} colors={colors} />)}</main>;
 }
 
-function LeaderboardPage({ css, colors, mode, setMode }: { css: Styles; colors: Colors; mode: LeaderboardMode; setMode: (mode: LeaderboardMode) => void }): JSX.Element {
+function IntroArt({ css, colors, num, variant }: { css: Styles; colors: Colors; num: string; variant: string }): AppElement {
+  if (variant === "streak") {
+    return <div style={{ ...css.illustration, ...css.introStreak }}><span style={css.introFlame}>*</span><section style={css.introStack}><b style={css.heroNumber}>12</b><span style={css.smallMuted}>day streak</span><i style={{ ...css.introLine, width: "82%" }} /><i style={{ ...css.introLine, width: "58%", opacity: 0.58 }} /></section></div>;
+  }
+  if (variant === "friends") {
+    return <div style={{ ...css.illustration, ...css.introFriends }}><span style={css.friendBubble}>SC</span><span style={{ ...css.friendBubble, ...css.friendBubbleBig }}>JD</span><span style={css.friendBubble}>AK</span><b style={css.introPulse}>3 friends checked in</b></div>;
+  }
+  if (variant === "heatmap") {
+    return <div style={{ ...css.illustration, ...css.introHeat }}><div style={css.introDotGrid}>{Array.from({ length: 42 }, (_, index) => <i key={index} style={{ ...css.introDot, background: index % 5 === 0 ? colors.warn : index % 3 === 0 ? colors.accent : colors.track, opacity: index % 4 === 0 ? 0.55 : 1 }} />)}</div></div>;
+  }
+  return <div style={css.illustration}><div style={css.ring}><span style={css.ringIn}>{num}</span></div><div style={css.bars}>{[36, 58, 78, 48].map((height, index) => <i key={height} style={{ ...css.bar, height, opacity: 0.45 + index * 0.15 }} />)}</div></div>;
+}
+
+function LeaderboardPage({ css, colors, mode, setMode }: { css: Styles; colors: Colors; mode: LeaderboardMode; setMode: (mode: LeaderboardMode) => void }): AppElement {
   const rows = [...leaderboard].sort((a, b) => (mode === "Monthly" ? b.monthly - a.monthly : b.total - a.total));
   const meIndex = rows.findIndex((item) => item.name === "You");
   const myScore = rows[meIndex][mode === "Monthly" ? "monthly" : "total"];
@@ -331,19 +345,19 @@ function LeaderboardPage({ css, colors, mode, setMode }: { css: Styles; colors: 
   return <main style={css.page}><Header label={mode} title="Leaderboard" right={<div style={css.rankPill}>#{meIndex + 1}</div>} css={css} /><section style={css.statCard}><div style={css.statTop}><div style={css.statBlock}><span style={css.statIcon}>🎯</span><b style={css.big}>{myScore}</b><p style={css.muted}>{mode} Points</p></div><span style={css.vLine} /><div style={css.statBlock}><span style={css.statIcon}>🏆</span><b style={{ ...css.big, color: colors.accent }}>#{meIndex + 1}</b><p style={css.muted}>Current Rank</p></div></div><div style={css.info}><span style={css.smallMuted}>{mode} qualification</span><b style={css.percent}>{myScore}/{target}</b></div><div style={css.track}><div style={{ ...css.fill, width: `${Math.min(100, Math.round((myScore / target) * 100))}%` }} /></div></section><div style={css.segments}><button style={mode === "Monthly" ? css.segmentActive : css.segment} onClick={() => setMode("Monthly")}>Monthly</button><button style={mode === "Total" ? css.segmentActive : css.segment} onClick={() => setMode("Total")}>Total</button></div>{rows.map((item, index) => <LeaderboardRow key={item.name} item={item} index={index} mode={mode} css={css} colors={colors} />)}</main>;
 }
 
-function ProfilePage({ css, colors, habits, setSettingsOpen }: { css: Styles; colors: Colors; habits: Habit[]; setSettingsOpen: (open: boolean) => void }): JSX.Element {
+function ProfilePage({ css, colors, habits, setSettingsOpen }: { css: Styles; colors: Colors; habits: Habit[]; setSettingsOpen: (open: boolean) => void }): AppElement {
   const [month, setMonth] = useState<HeatmapSelection>("Apr-Jun");
   return <main style={css.page}><Header label="Account" title="Profile" right={<button style={css.settings} onClick={() => setSettingsOpen(true)}>Settings</button>} css={css} /><section style={css.profile}><Avatar initials="JD" css={css} size="lg" /><h2 style={css.profileName}>John Doe</h2><p style={css.muted}>Member for 45 days</p></section><h2 style={css.sectionTitle}>Statistics</h2><div style={css.stats}><SmallStat emoji="🔥" label="Current Streak" value="12" sub="days" css={css} /><SmallStat emoji="🏆" label="Best Streak" value="18" sub="days" css={css} /></div><section style={css.fullStat}><span style={css.statIcon}>✅</span><p style={css.muted}>Total</p><b style={css.medium}>87</b><p style={css.smallMuted}>habits finished</p></section><MonthlyHeatmap css={css} colors={colors} habits={habits} month={month} setMonth={setMonth} /><div style={css.achHead}><h2 style={css.sectionTitle}>Achievements</h2><span style={css.smallMuted}>3/6</span></div><div style={css.achGrid}><Achievement title="First Steps" icon="👟" active css={css} /><Achievement title="Week Warrior" icon="⚔️" active css={css} /><Achievement title="Social" icon="🤝" active css={css} /><Achievement title="Perfect Month" icon="🌕" css={css} /><Achievement title="Overachiever" icon="🚀" css={css} /><Achievement title="Legend" icon="👑" css={css} /></div></main>;
 }
 
-function Header({ label, title, right, css }: { label: string; title: string; right: React.ReactNode; css: Styles }): JSX.Element {
+function Header({ label, title, right, css }: { label: string; title: string; right: React.ReactNode; css: Styles }): AppElement {
   return <div style={css.header}><div><p style={css.label}>{label}</p><h1 style={css.title}>{title}</h1></div>{right}</div>;
 }
-function Summary({ emoji, num, text, css }: { emoji: string; num: string; text: string; css: Styles }): JSX.Element {
+function Summary({ emoji, num, text, css }: { emoji: string; num: string; text: string; css: Styles }): AppElement {
   return <div style={css.summaryBox}><span style={css.summaryEmoji}>{emoji}</span><b style={css.summaryNum}>{num}</b><small style={css.summaryText}>{text}</small></div>;
 }
 
-function CalendarToggle({ calendarView, setCalendarView, css }: { calendarView: CalendarView; setCalendarView: (view: CalendarView) => void; css: Styles }): JSX.Element {
+function CalendarToggle({ calendarView, setCalendarView, css }: { calendarView: CalendarView; setCalendarView: (view: CalendarView) => void; css: Styles }): AppElement {
   return <div style={css.calendarToggle}><button style={calendarView === "Week" ? css.segmentActive : css.segment} onClick={() => setCalendarView("Week")}>Week</button><button style={calendarView === "Month" ? css.segmentActive : css.segment} onClick={() => setCalendarView("Month")}>Month</button></div>;
 }
 function dotColor(status: DayStatus, colors: Colors): string {
@@ -352,14 +366,14 @@ function dotColor(status: DayStatus, colors: Colors): string {
   if (status === "today") return colors.pending;
   return colors.track;
 }
-function MockWeekCalendar({ css, colors, days, habits, selectedDate, onSelectDay }: { css: Styles; colors: Colors; days: WeekDay[]; habits: Habit[]; selectedDate: number; onSelectDay: (date: number) => void }): JSX.Element {
+function MockWeekCalendar({ css, colors, days, habits, selectedDate, onSelectDay }: { css: Styles; colors: Colors; days: WeekDay[]; habits: Habit[]; selectedDate: number; onSelectDay: (date: number) => void }): AppElement {
   return <div style={css.week}>{days.map((day) => { const selected = selectedDate === day.date; const status = statusForDay(day.date, habits); return <button key={day.date} onClick={() => onSelectDay(day.date)} style={selected ? { ...css.day, ...css.dayActive } : css.day}><b style={{ color: selected ? colors.white : colors.text }}>{day.date}</b><span style={{ ...css.dayText, color: selected ? colors.white : colors.muted }}>{day.day}</span><i style={{ ...css.dayDot, backgroundColor: dotColor(status, colors) }} /></button>; })}</div>;
 }
-function MockMonthCalendar({ css, colors, habits, selectedDate, onSelectDay }: { css: Styles; colors: Colors; habits: Habit[]; selectedDate: number; onSelectDay: (date: number) => void }): JSX.Element {
+function MockMonthCalendar({ css, colors, habits, selectedDate, onSelectDay }: { css: Styles; colors: Colors; habits: Habit[]; selectedDate: number; onSelectDay: (date: number) => void }): AppElement {
   const days = Array.from({ length: 30 }, (_, i) => i + 1);
   return <section style={css.month}><div style={css.monthHead}><b>April 2026</b><span style={css.smallMuted}>tap a day</span></div><div style={css.monthGrid}>{days.map((date) => { const selected = date === selectedDate; const status = statusForDay(date, habits); return <button key={date} onClick={() => onSelectDay(date)} style={selected ? { ...css.monthDay, ...css.monthDayActive } : css.monthDay}><span style={{ color: selected ? colors.white : colors.text }}>{date}</span><i style={{ ...css.dayDot, backgroundColor: dotColor(status, colors) }} /></button>; })}</div></section>;
 }
-function HabitCard({ habit, selectedDate, css, colors, onToggleDone, onUploadProof, onOpen }: { habit: Habit; selectedDate: number; css: Styles; colors: Colors; onToggleDone: (id: number) => void; onUploadProof: (id: number) => void; onOpen: (id: number) => void }): JSX.Element {
+function HabitCard({ habit, selectedDate, css, colors, onToggleDone, onUploadProof, onOpen }: { habit: Habit; selectedDate: number; css: Styles; colors: Colors; onToggleDone: (id: number) => void; onUploadProof: (id: number) => void; onOpen: (id: number) => void }): AppElement {
   const status = effectiveStatus(habit, selectedDate);
   const done = status === "done";
   const missed = status === "missed";
@@ -368,22 +382,22 @@ function HabitCard({ habit, selectedDate, css, colors, onToggleDone, onUploadPro
   const statusText = missed ? "Missed" : done ? "Done" : future ? `Apr ${selectedDate}` : "";
   return <section style={css.habit} onClick={() => onOpen(habit.id)}><div style={css.habitTop}><div><h3 style={css.habitTitle}>{habit.title}</h3><p style={css.muted}>{habit.category} | {habit.streak} day streak{habit.deadline ? ` | due Apr ${habit.deadline}` : ""}</p></div><span style={done ? css.donePill : missed ? css.missedPill : statusText ? css.futurePill : css.pendingPill}>{statusText}</span></div><div style={css.track}><div style={{ ...css.fill, width: `${done ? 100 : missed ? 0 : habit.progress * 100}%`, backgroundColor: missed ? colors.warn : colors.accent }} /></div>{proofLocked && !future && !missed && <p style={css.proofText}>Upload proof before marking done.</p>}<div style={habit.proof ? css.habitActionsSplit : css.habitActions}>{habit.proof && <button onClick={(event) => { event.stopPropagation(); onUploadProof(habit.id); }} style={habit.proofUploaded ? { ...css.secondary, ...css.uploaded } : css.secondary}>{habit.proofUploaded ? "Proof uploaded" : "Upload proof"}</button>}<button disabled={future || proofLocked || missed} onClick={(event) => { event.stopPropagation(); onToggleDone(habit.id); }} style={future || proofLocked || missed ? { ...css.complete, ...css.disabled } : done ? { ...css.complete, ...css.doneBtn } : css.complete}>{done ? "Done - tap to undo" : "Mark done"}</button></div></section>;
 }
-function FriendCard({ friend, css, colors }: { friend: Friend; css: Styles; colors: Colors }): JSX.Element {
+function FriendCard({ friend, css, colors }: { friend: Friend; css: Styles; colors: Colors }): AppElement {
   return <section style={css.friend}><Avatar initials={friend.initials} css={css} /><div style={css.friendInfo}><b style={css.friendName}>{friend.name}</b><p style={css.friendMeta}>{friend.streak} day streak | {friend.habits}</p><div style={css.track}><div style={{ ...css.fill, width: `${friend.progress * 100}%`, backgroundColor: friend.done ? colors.accent : colors.warn }} /></div></div><div style={friend.done ? css.statusDone : css.statusPending}><span>{friend.done ? "Done" : "Pending"}</span></div></section>;
 }
-function LeaderboardRow({ item, index, mode, css, colors }: { item: LeaderboardItem; index: number; mode: LeaderboardMode; css: Styles; colors: Colors }): JSX.Element {
+function LeaderboardRow({ item, index, mode, css, colors }: { item: LeaderboardItem; index: number; mode: LeaderboardMode; css: Styles; colors: Colors }): AppElement {
   const me = item.name === "You";
   const points = mode === "Monthly" ? item.monthly : item.total;
   return <section style={me ? { ...css.rank, ...css.you } : css.rank}><b style={{ ...css.rankNo, color: me ? colors.accent : colors.muted }}>{index + 1}</b><Avatar initials={item.initials} css={css} /><div style={{ flex: 1 }}><b>{item.name}</b><p style={css.smallMuted}>{item.streak} day streak</p></div>{me && <span style={css.youPill}>You</span>}<b style={css.points}>{points}</b></section>;
 }
-function MonthlyHeatmap({ css, colors, habits, month, setMonth }: { css: Styles; colors: Colors; habits: Habit[]; month: HeatmapSelection; setMonth: (month: HeatmapSelection) => void }): JSX.Element {
+function MonthlyHeatmap({ css, colors, habits, month, setMonth }: { css: Styles; colors: Colors; habits: Habit[]; month: HeatmapSelection; setMonth: (month: HeatmapSelection) => void }): AppElement {
   const visibleMonths = heatmapQuarters[month];
   return <section style={css.monthHeat}><div style={css.heatHead}><div><h2 style={css.sectionTitle}>Monthly Heatmap</h2><p style={css.smallMuted}>{month} 2026</p></div><select style={css.monthSelect} value={month} onChange={(event) => setMonth(event.currentTarget.value as HeatmapSelection)}>{(Object.keys(heatmapQuarters) as HeatmapSelection[]).map((item) => <option key={item} value={item}>{item}</option>)}</select></div><div style={css.statusLegend}><Legend color={colors.accent} label="Done" css={css} /><Legend color={colors.warn} label="Missed" css={css} /><Legend color={colors.track} label="Unmarked" css={css} /></div><div style={css.monthHeatGrid}>{visibleMonths.flatMap((item) => [<span key={`${item}-label`} style={css.heatMonthLabel}>{item.slice(0, 3)}</span>, ...Array.from({ length: daysInHeatmapMonth(item) }, (_, index) => { const date = index + 1; const status = profileHeatStatus(item, date, habits); return <i key={`${item}-${date}`} title={`${item} ${date}: ${status}`} style={{ ...css.monthHeatDot, backgroundColor: dotColor(status, colors), opacity: status === "none" ? 0.42 : 1 }} />; })])}</div></section>;
 }
-function SettingsSheet(props: { css: Styles; colors: Colors; theme: ThemeMode; accent: Accent; calendarView: CalendarView; notifications: boolean; setTheme: (value: ThemeMode) => void; setAccent: (value: Accent) => void; setCalendarView: (value: CalendarView) => void; setNotifications: (value: boolean) => void; onClose: () => void }): JSX.Element {
+function SettingsSheet(props: { css: Styles; colors: Colors; theme: ThemeMode; accent: Accent; calendarView: CalendarView; notifications: boolean; setTheme: (value: ThemeMode) => void; setAccent: (value: Accent) => void; setCalendarView: (value: CalendarView) => void; setNotifications: (value: boolean) => void; onClose: () => void }): AppElement {
   return <div style={props.css.overlay}><section style={props.css.sheet}><div style={props.css.sheetHead}><h2>Settings</h2><button style={props.css.close} onClick={props.onClose}>×</button></div><Pref css={props.css} label="Theme" value={props.theme} onClick={() => props.setTheme(props.theme === "dark" ? "light" : "dark")} /><div style={props.css.pref}><b>Accent</b><div style={props.css.colors}>{(Object.keys(accents) as Accent[]).map((accentKey) => <button key={accentKey} onClick={() => props.setAccent(accentKey)} style={{ ...props.css.colorDot, backgroundColor: accents[accentKey], outline: props.accent === accentKey ? `3px solid ${props.colors.text}` : "none" }} />)}</div></div><div style={props.css.pref}><b>Notifications</b><button onClick={() => props.setNotifications(!props.notifications)} style={props.notifications ? props.css.toggleOn : props.css.toggleOff}><i style={props.notifications ? props.css.knobOn : props.css.knobOff} /></button></div><Pref css={props.css} label="Calendar" value={props.calendarView} onClick={() => props.setCalendarView(props.calendarView === "Week" ? "Month" : "Week")} /><Pref css={props.css} label="Reminder" value="20:00" /></section></div>;
 }
-function AddHabitSheet({ css, draft, setDraft, onSave, onClose }: { css: Styles; draft: HabitDraft; setDraft: (value: HabitDraft) => void; onSave: () => void; onClose: () => void }): JSX.Element {
+function AddHabitSheet({ css, draft, setDraft, onSave, onClose }: { css: Styles; draft: HabitDraft; setDraft: (value: HabitDraft) => void; onSave: () => void; onClose: () => void }): AppElement {
   function toggleDay(date: number): void {
     if (date < todayDate) return;
     const days = draft.days.includes(date) ? draft.days.filter((day) => day !== date) : [...draft.days, date].sort((a, b) => a - b);
@@ -392,28 +406,28 @@ function AddHabitSheet({ css, draft, setDraft, onSave, onClose }: { css: Styles;
   const deadlineOptions = [30, 45, 75];
   return <div style={css.overlay}><section style={css.sheet}><div style={css.sheetHead}><h2>New Task</h2><button style={css.close} onClick={onClose}>×</button></div><input style={css.input} value={draft.title} placeholder="Task name" onChange={(event) => setDraft({ ...draft, title: event.currentTarget.value })} /><label style={css.fieldLabel}>Category<select style={css.select} value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.currentTarget.value })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></label>{draft.category === "New category" && <input style={css.input} value={draft.customCategory} placeholder="Category name" onChange={(event) => setDraft({ ...draft, customCategory: event.currentTarget.value })} />}<p style={css.fieldLabel}>Days of week</p><div style={css.dayPicker}>{weekDays.map((day) => { const past = day.date < todayDate; return <button key={day.date} disabled={past} style={past ? css.dayChoiceDisabled : draft.days.includes(day.date) ? css.dayChoiceActive : css.dayChoice} onClick={() => toggleDay(day.date)}><b>{day.day}</b></button>; })}</div><label style={css.fieldLabel}>Optional deadline<select style={css.select} value={draft.deadline ?? ""} onChange={(event) => setDraft({ ...draft, deadline: event.currentTarget.value ? Number(event.currentTarget.value) : null })}><option value="">No deadline</option>{deadlineOptions.map((day) => <option key={day} value={day}>Day {day}</option>)}<option value="-1">Custom</option></select></label>{draft.deadline === -1 && <input style={css.input} value={draft.customDeadline} inputMode="numeric" placeholder="Custom" onChange={(event) => setDraft({ ...draft, customDeadline: event.currentTarget.value.replace(/\D/g, "") })} />}<div style={css.pref}><b>Photo proof</b><button onClick={() => setDraft({ ...draft, proof: !draft.proof })} style={draft.proof ? css.toggleOn : css.toggleOff}><i style={draft.proof ? css.knobOn : css.knobOff} /></button></div><button style={css.primary} onClick={onSave}>Add Task</button></section></div>;
 }
-function InviteSheet({ css, inviteSent, setInviteSent, onClose }: { css: Styles; inviteSent: boolean; setInviteSent: (value: boolean) => void; onClose: () => void }): JSX.Element {
-  return <div style={css.overlay}><section style={css.sheet}><div style={css.sheetHead}><h2>Add Friend</h2><button style={css.close} onClick={onClose}>×</button></div><input style={css.input} placeholder="Name or email" /><div style={css.inviteCard}><b>Invite link</b><p style={css.smallMuted}>loopi.app/invite/JD-284</p></div></section></div>;
+function InviteSheet({ css, inviteSent, setInviteSent, onClose }: { css: Styles; inviteSent: boolean; setInviteSent: (value: boolean) => void; onClose: () => void }): AppElement {
+  return <div style={css.overlay}><section style={css.sheet}><div style={css.sheetHead}><h2>Add Friend</h2><button style={css.close} onClick={onClose}>×</button></div><input style={css.input} placeholder="Name or email" /><div style={css.inviteCard}><b>Invite link</b><p style={css.smallMuted}>loopi.app/invite/JD-284</p></div><button style={inviteSent ? { ...css.primary, ...css.doneBtn } : css.primary} onClick={() => setInviteSent(true)}>{inviteSent ? "Invite Sent" : "Send Invite"}</button></section></div>;
 }
-function Pref({ css, label, value, onClick }: { css: Styles; label: string; value: string; onClick?: () => void }): JSX.Element { return <button style={css.pref} onClick={onClick}><b>{label}</b><span style={css.settingValue}>{value}</span></button>; }
-function SmallStat({ emoji, label, value, sub, css }: { emoji: string; label: string; value: string; sub: string; css: Styles }): JSX.Element { return <section style={css.smallStat}><span style={css.statIcon}>{emoji}</span><p style={css.muted}>{label}</p><b style={css.medium}>{value}</b><p style={css.smallMuted}>{sub}</p></section>; }
-function Achievement({ title, icon, active, css }: { title: string; icon: string; active?: boolean; css: Styles }): JSX.Element { return <section style={active ? { ...css.ach, ...css.achActive } : css.ach}><div style={active ? css.badgeActive : css.badge}>{icon}</div><b style={css.achText}>{title}</b></section>; }
-function Avatar({ initials, css, size = "sm" }: { initials: string; css: Styles; size?: "sm" | "lg" }): JSX.Element { return <div style={size === "lg" ? css.avatarLg : css.avatar}>{initials}</div>; }
-function Legend({ color, label, css }: { color: string; label: string; css: Styles }): JSX.Element { return <span style={css.legendItem}><i style={{ ...css.statusDot, backgroundColor: color }} />{label}</span>; }
-function EmptyState({ css, text }: { css: Styles; text: string }): JSX.Element { return <section style={css.empty}><b>{text}</b><p style={css.smallMuted}>Use Add to schedule something here.</p></section>; }
-function Confetti({ css, colors, confettiKey }: { css: Styles; colors: Colors; confettiKey: number }): JSX.Element | null {
+function Pref({ css, label, value, onClick }: { css: Styles; label: string; value: string; onClick?: () => void }): AppElement { return <button style={css.pref} onClick={onClick}><b>{label}</b><span style={css.settingValue}>{value}</span></button>; }
+function SmallStat({ emoji, label, value, sub, css }: { emoji: string; label: string; value: string; sub: string; css: Styles }): AppElement { return <section style={css.smallStat}><span style={css.statIcon}>{emoji}</span><p style={css.muted}>{label}</p><b style={css.medium}>{value}</b><p style={css.smallMuted}>{sub}</p></section>; }
+function Achievement({ title, icon, active, css }: { title: string; icon: string; active?: boolean; css: Styles }): AppElement { return <section style={active ? { ...css.ach, ...css.achActive } : css.ach}><div style={active ? css.badgeActive : css.badge}>{icon}</div><b style={css.achText}>{title}</b></section>; }
+function Avatar({ initials, css, size = "sm" }: { initials: string; css: Styles; size?: "sm" | "lg" }): AppElement { return <div style={size === "lg" ? css.avatarLg : css.avatar}>{initials}</div>; }
+function Legend({ color, label, css }: { color: string; label: string; css: Styles }): AppElement { return <span style={css.legendItem}><i style={{ ...css.statusDot, backgroundColor: color }} />{label}</span>; }
+function EmptyState({ css, text }: { css: Styles; text: string }): AppElement { return <section style={css.empty}><b>{text}</b><p style={css.smallMuted}>Use Add to schedule something here.</p></section>; }
+function Confetti({ css, colors, confettiKey }: { css: Styles; colors: Colors; confettiKey: number }): AppElement | null {
   if (!confettiKey) return null;
   const confettiColors = [colors.accent, colors.warn, "#FFD166", "#EF476F", colors.accentSoft];
   return <div key={confettiKey} style={css.confetti}><style>{`@keyframes loopiLeft{0%{transform:translate(-40px,120px) rotate(0);opacity:0}20%{opacity:1}100%{transform:translate(160px,-80px) rotate(220deg);opacity:0}}@keyframes loopiRight{0%{transform:translate(40px,120px) rotate(0);opacity:0}20%{opacity:1}100%{transform:translate(-160px,-80px) rotate(-220deg);opacity:0}}`}</style>{Array.from({ length: 28 }, (_, index) => { const fromLeft = index % 2 === 0; return <span key={index} style={{ ...css.confettiPiece, left: fromLeft ? `${index * 2}%` : `${96 - index * 2}%`, top: `${210 + (index % 5) * 18}px`, background: confettiColors[index % confettiColors.length], animation: `${fromLeft ? "loopiLeft" : "loopiRight"} .9s ease-out forwards`, animationDelay: `${(index % 7) * 0.03}s` }} />; })}</div>;
 }
-function BottomTabs({ tab, setTab, css, colors }: { tab: Tab; setTab: (tab: Tab) => void; css: Styles; colors: Colors }): JSX.Element {
-  const items: Array<[Tab, JSX.Element, string]> = [["home", <HomeIcon />, "Home"], ["friends", <FriendsIcon />, "Friends"], ["leaderboard", <RankIcon />, "Rank"], ["profile", <ProfileIcon />, "Profile"]];
+function BottomTabs({ tab, setTab, css, colors }: { tab: Tab; setTab: (tab: Tab) => void; css: Styles; colors: Colors }): AppElement {
+  const items: Array<[Tab, AppElement, string]> = [["home", <HomeIcon />, "Home"], ["friends", <FriendsIcon />, "Friends"], ["leaderboard", <RankIcon />, "Rank"], ["profile", <ProfileIcon />, "Profile"]];
   return <nav style={css.tabs}>{items.map(([key, icon, label]) => { const active = tab === key; return <button key={key} onClick={() => setTab(key)} style={active ? { ...css.tab, ...css.tabActive } : css.tab}><span style={{ ...css.svg, color: active ? colors.accent : colors.muted }}>{icon}</span><small style={{ ...css.tabLabel, color: active ? colors.accent : colors.muted }}>{label}</small></button>; })}</nav>;
 }
-function HomeIcon(): JSX.Element { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>; }
-function FriendsIcon(): JSX.Element { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.8-3.6 3.2-5.5 6.5-5.5s5.7 1.9 6.5 5.5" /><path d="M16 11.5a3 3 0 1 0-.5-5.95" /><path d="M17.5 14.6c2.2.6 3.6 2.4 4 5.4" /></svg>; }
-function RankIcon(): JSX.Element { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20h16" /><path d="M6 20V10h4v10" /><path d="M10 20V5h4v15" /><path d="M14 20v-8h4v8" /></svg>; }
-function ProfileIcon(): JSX.Element { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4" /><path d="M4.5 21c1.1-4.2 3.7-6.2 7.5-6.2s6.4 2 7.5 6.2" /></svg>; }
+function HomeIcon(): AppElement { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M9 21v-6h6v6" /></svg>; }
+function FriendsIcon(): AppElement { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.8-3.6 3.2-5.5 6.5-5.5s5.7 1.9 6.5 5.5" /><path d="M16 11.5a3 3 0 1 0-.5-5.95" /><path d="M17.5 14.6c2.2.6 3.6 2.4 4 5.4" /></svg>; }
+function RankIcon(): AppElement { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20h16" /><path d="M6 20V10h4v10" /><path d="M10 20V5h4v15" /><path d="M14 20v-8h4v8" /></svg>; }
+function ProfileIcon(): AppElement { return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4" /><path d="M4.5 21c1.1-4.2 3.7-6.2 7.5-6.2s6.4 2 7.5 6.2" /></svg>; }
 
 function withAlpha(hex: string, alpha: string): string {
   return `${hex}${alpha}`;
